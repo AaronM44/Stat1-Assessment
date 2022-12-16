@@ -7,13 +7,62 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
 ```
 
-## R Markdown
+## Main Findings
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+## Executive Summary
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## Dataset Overview
+The dataset I chose to use for the assessment was found on Kaggle. Over a period of a year in 2015, data was collected that contains the details of beer consumption of students around a university area in Sao Paulo, Brazil.
+
+The original columns were in Brazilian so I have translated them for this project:
+
+- Data - Date
+- Temperatura Media (C) - Median Temp. (C)
+- Temperatura Minima (C) - Min. Temp (C)
+- Temperatura Maxima (C) - Max. Temp (C)
+- Precipitacao (mm) - Precipitation (mm)
+- Final de Semana - Weekend
+- Consumo de cerveja (litros) - Consumption (litres)
+
+
+## Hypothesis
+Does an increase in temperature lead to an increase in beer consumption among students in Sao Paulo, Brazil?
+
+H0 - Increased temperatures do not lead to an increase in beer consumption.
+
+H1 - Increased temperatures do lead to an increase in beer consumption
+
+## R Packages
+``` {r imports}
+library(tidyverse)
+library(patchwork)
+```
+
+## Original Dataset Analysis
+
+``` {r orig_read}
+orig_data <- read.csv("data/Consumo_cerveja.csv")
+```
+
+``` {r orig_rename}
+orig_data <- orig_data %>%
+  rename(date = Data,
+         temp_median = Temperatura.Media..C.,
+         temp_min = Temperatura.Minima..C.,
+         temp_max = Temperatura.Maxima..C.,
+         precip = Precipitacao..mm.,
+         weekend = Final.de.Semana,
+         consum = Consumo.de.cerveja..litros.)
+```
+
+``` {r orig_head}
+head(orig_data)
+```
+
+## Conclusion
 
 ```{r cars}
 summary(cars)
