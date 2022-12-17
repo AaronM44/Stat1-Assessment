@@ -35,19 +35,25 @@ H0 - Increased temperatures do not lead to an increase in beer consumption.
 
 H1 - Increased temperatures do lead to an increase in beer consumption
 
-## R Packages
-``` {r imports}
+``` {r imports, echo=FALSE}
+# Import packages
 library(tidyverse)
 library(patchwork)
+library(lubridate)
 ```
 
 ## Original Dataset Analysis
 
 ``` {r orig_read}
-orig_data <- read.csv("data/Consumo_cerveja.csv")
+# Import data - dataset has commas instead of decimal points and many blank rows
+orig_data <- read.csv("data/Consumo_cerveja.csv", dec = ",")
+orig_data <- orig_data[1:365,]
+
+set.seed(7)
 ```
 
 ``` {r orig_rename}
+# Rename columns
 orig_data <- orig_data %>%
   rename(date = Data,
          temp_median = Temperatura.Media..C.,
@@ -62,18 +68,96 @@ orig_data <- orig_data %>%
 head(orig_data)
 ```
 
+``` {r orig_comma_rep}
+# Format fields correctly
+orig_data$date <- as.Date(orig_data$date)
+orig_data$temp_median <- as.numeric(orig_data$temp_median)
+orig_data$temp_min <- as.numeric(orig_data$temp_min)
+orig_data$temp_max <- as.numeric(orig_data$temp_max)
+orig_data$precip <- as.numeric(orig_data$precip)
+orig_data$weekend <- as.factor(orig_data$weekend)
+orig_data$consum <- as.numeric(as.character(orig_data$consum))
+```
+
+``` {r orig_summary}
+summary(orig_data)
+```
+
+``` {r orig_distr, echo=FALSE}
+orig_p1 <- ggplot(orig_data, aes(x = temp_median)) +
+  geom_histogram(bins = 10) +
+  labs(title = "Distribution of Median Temperature",
+       x = "Temperature (C)",
+       y = "Count") +
+  geom_vline(aes(xintercept = mean(temp_median)),col='red',linewidth=0.5) +
+  geom_vline(aes(xintercept = median(temp_median)),col='green',linewidth=0.5)
+
+orig_p2 <- ggplot(orig_data, aes(x = temp_min)) +
+  geom_histogram(bins = 10) +
+  labs(title = "Distribution of Min. Temperature",
+       x = "Temperature (C)",
+       y = "Count") +
+  geom_vline(aes(xintercept = mean(temp_min)),col='red',linewidth=0.5) +
+  geom_vline(aes(xintercept = median(temp_min)),col='green',linewidth=0.5)
+
+orig_p3 <- ggplot(orig_data, aes(x = temp_max)) +
+  geom_histogram(bins = 10) +
+  labs(title = "Distribution of Max. Temperature",
+       x = "Temperature (C)",
+       y = "Count") +
+  geom_vline(aes(xintercept = mean(temp_max)),col='red',linewidth=0.5) +
+  geom_vline(aes(xintercept = median(temp_max)),col='green',linewidth=0.5)
+
+orig_p4 <- ggplot(orig_data, aes(x = precip)) +
+  geom_histogram(bins = 10) +
+  labs(title = "Distribution of Precipitation",
+       x = "Precipitation (mm)",
+       y = "Count") +
+  geom_vline(aes(xintercept = mean(precip)),col='red',linewidth=0.5) +
+  geom_vline(aes(xintercept = median(precip)),col='green',linewidth=0.5)
+
+orig_p5 <- ggplot(orig_data, aes(x = weekend)) +
+  geom_bar() +
+  labs(title = "Count of Weekdays vs Weekends",
+       x = "Weekend",
+       y = "Count")
+
+orig_p6 <- ggplot(orig_data, aes(x = consum)) +
+  geom_histogram(bins = 10) +
+  labs(title = "Distribution of Beer Consumption",
+       x = "Consumption (litres)",
+       y = "Count") +
+  geom_vline(aes(xintercept = mean(consum)),col='red',linewidth=0.5) +
+  geom_vline(aes(xintercept = median(consum)),col='green',linewidth=0.5)
+
+orig_patchwork <- orig_p1 + orig_p2 + orig_p3 + orig_p4 + orig_p5 + orig_p6
+orig_patchwork + plot_annotation(
+  title = 'Original Dataset Overview',
+  subtitle = 'Red Line - Mean, Green Line - Median'
+)
+```
+
+## Simulated Data
+``` {r sim_dataframe}
+#sim_data <- data.frame(date, temp_median, temp_min, temp_max, precip,
+#                       weekend, consum)
+```
+
+### Date Range
+``` {r sim_date}
+# defining start date
+start_date <- ymd("2015/01/01")
+  
+# defining end date
+end_date <- ymd("2015/12/31")
+  
+# generating range of dates
+dates <- seq(start_date, end_date,"days")
+
+```
+
 ## Conclusion
 
-```{r cars}
-summary(cars)
-```
 
-## Including Plots
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
