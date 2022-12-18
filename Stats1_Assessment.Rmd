@@ -44,7 +44,7 @@ library(lubridate)
 
 ## Original Dataset Analysis
 
-``` {r orig_read}
+``` {r orig_read, echo=FALSE}
 # Import data - dataset has commas instead of decimal points and many blank rows
 orig_data <- read.csv("data/Consumo_cerveja.csv", dec = ",")
 orig_data <- orig_data[1:365,]
@@ -52,7 +52,7 @@ orig_data <- orig_data[1:365,]
 set.seed(7)
 ```
 
-``` {r orig_rename}
+``` {r orig_rename, echo=FALSE}
 # Rename columns
 orig_data <- orig_data %>%
   rename(date = Data,
@@ -64,11 +64,11 @@ orig_data <- orig_data %>%
          consum = Consumo.de.cerveja..litros.)
 ```
 
-``` {r orig_head}
+``` {r orig_head, echo=FALSE}
 head(orig_data)
 ```
 
-``` {r orig_comma_rep}
+``` {r orig_comma_rep, echo=FALSE}
 # Format fields correctly
 orig_data$date <- as_date(as.Date(orig_data$date))
 orig_data$temp_median <- as.numeric(orig_data$temp_median)
@@ -79,11 +79,11 @@ orig_data$weekend <- as.factor(orig_data$weekend)
 orig_data$consum <- as.numeric(as.character(orig_data$consum))
 ```
 
-``` {r orig_summary}
+``` {r orig_summary, echo=FALSE}
 summary(orig_data)
 ```
 
-``` {r orig_add_month}
+``` {r orig_add_month, echo=FALSE}
 orig_data <- orig_data %>%
   mutate(mo = month(date))
 ```
@@ -142,7 +142,7 @@ orig_patchwork + plot_annotation(
 )
 ```
 
-``` {r orig_time}
+``` {r orig_time, echo=FALSE}
 orig_time_p1 <- ggplot(orig_data, aes(x = mo, y = temp_median, group = mo)) +
   geom_boxplot() +
   scale_x_continuous(breaks = seq(1,12,1)) +
@@ -167,8 +167,14 @@ orig_time_p4 <- ggplot(orig_data, aes(x = mo, y = precip, group = mo)) +
   stat_summary(fun = "mean", aes(ymax = after_stat(y), ymin = after_stat(y)), 
                color = "red", shape = 4)
 
+orig_time_p5 <- ggplot(orig_data, aes(x = mo, y = consum, group = mo)) +
+  geom_boxplot() +
+  scale_x_continuous(breaks = seq(1,12,1)) +
+  stat_summary(fun = "mean", aes(ymax = after_stat(y), ymin = after_stat(y)), 
+               color = "red", shape = 4)
+
 orig_patchwork <- orig_time_p1 + orig_time_p2 + orig_time_p3 + 
-  orig_time_p4
+  orig_time_p4 + orig_time_p5
 orig_patchwork + plot_annotation(
   title = 'Continuous Variables by Month'
 )
@@ -177,7 +183,7 @@ orig_patchwork + plot_annotation(
 ## Simulated Data
 
 ### Date Range
-``` {r sim_date}
+``` {r sim_date, echo=FALSE}
 # defining start date
 start_date <- ymd("2015/01/01")
   
@@ -189,14 +195,192 @@ dates <- seq(start_date, end_date,"days")
 
 ```
 
-``` {r sim_data}
-sim_data <- tibble(
-  temp_median = rnorm(365, mean = 45, sd = 20)
-)
-#mutate(across(where(is.numeric), round, digits = 0)) # Round numerical data to 0 decimal places
+``` {r sim_temp_median, echo=FALSE}
+
+temp_med_stat <- orig_data %>%
+  group_by(mo) %>%
+  summarise(mean = mean(temp_median), sd = sd(temp_median))
+
+temp_med_jan <- rnorm(31, mean=temp_med_stat$mean[[1]], sd=temp_med_stat$sd[[1]])
+temp_med_feb <- rnorm(28, mean=temp_med_stat$mean[[2]], sd=temp_med_stat$sd[[2]])
+temp_med_mar <- rnorm(31, mean=temp_med_stat$mean[[3]], sd=temp_med_stat$sd[[3]])
+temp_med_apr <- rnorm(30, mean=temp_med_stat$mean[[4]], sd=temp_med_stat$sd[[4]])
+temp_med_may <- rnorm(31, mean=temp_med_stat$mean[[5]], sd=temp_med_stat$sd[[5]])
+temp_med_jun <- rnorm(30, mean=temp_med_stat$mean[[6]], sd=temp_med_stat$sd[[6]])
+temp_med_jul <- rnorm(31, mean=temp_med_stat$mean[[7]], sd=temp_med_stat$sd[[7]])
+temp_med_aug <- rnorm(31, mean=temp_med_stat$mean[[8]], sd=temp_med_stat$sd[[8]])
+temp_med_sep <- rnorm(30, mean=temp_med_stat$mean[[9]], sd=temp_med_stat$sd[[9]])
+temp_med_oct <- rnorm(31, mean=temp_med_stat$mean[[10]], sd=temp_med_stat$sd[[10]])
+temp_med_nov <- rnorm(30, mean=temp_med_stat$mean[[11]], sd=temp_med_stat$sd[[11]])
+temp_med_dec <- rnorm(31, mean=temp_med_stat$mean[[12]], sd=temp_med_stat$sd[[12]])
+
+temp_med <- c(temp_med_jan, temp_med_feb, temp_med_mar, temp_med_apr,
+                   temp_med_may, temp_med_jun, temp_med_jul, temp_med_aug,
+                   temp_med_sep, temp_med_oct, temp_med_nov, temp_med_dec)
 ```
 
+``` {r sim_temp_min, echo=FALSE}
 
+temp_min_stat <- orig_data %>%
+  group_by(mo) %>%
+  summarise(mean = mean(temp_min), sd = sd(temp_min))
+
+temp_min_jan <- rnorm(31, mean=temp_min_stat$mean[[1]], sd=temp_min_stat$sd[[1]])
+temp_min_feb <- rnorm(28, mean=temp_min_stat$mean[[2]], sd=temp_min_stat$sd[[2]])
+temp_min_mar <- rnorm(31, mean=temp_min_stat$mean[[3]], sd=temp_min_stat$sd[[3]])
+temp_min_apr <- rnorm(30, mean=temp_min_stat$mean[[4]], sd=temp_min_stat$sd[[4]])
+temp_min_may <- rnorm(31, mean=temp_min_stat$mean[[5]], sd=temp_min_stat$sd[[5]])
+temp_min_jun <- rnorm(30, mean=temp_min_stat$mean[[6]], sd=temp_min_stat$sd[[6]])
+temp_min_jul <- rnorm(31, mean=temp_min_stat$mean[[7]], sd=temp_min_stat$sd[[7]])
+temp_min_aug <- rnorm(31, mean=temp_min_stat$mean[[8]], sd=temp_min_stat$sd[[8]])
+temp_min_sep <- rnorm(30, mean=temp_min_stat$mean[[9]], sd=temp_min_stat$sd[[9]])
+temp_min_oct <- rnorm(31, mean=temp_min_stat$mean[[10]], sd=temp_min_stat$sd[[10]])
+temp_min_nov <- rnorm(30, mean=temp_min_stat$mean[[11]], sd=temp_min_stat$sd[[11]])
+temp_min_dec <- rnorm(31, mean=temp_min_stat$mean[[12]], sd=temp_min_stat$sd[[12]])
+
+temp_min_df <- c(temp_min_jan, temp_min_feb, temp_min_mar, temp_min_apr,
+                   temp_min_may, temp_min_jun, temp_min_jul, temp_min_aug,
+                   temp_min_sep, temp_min_oct, temp_min_nov, temp_min_dec)
+```
+
+``` {r sim_temp_max, echo=FALSE}
+
+temp_max_stat <- orig_data %>%
+  group_by(mo) %>%
+  summarise(mean = mean(temp_max), sd = sd(temp_max))
+
+temp_max_jan <- rnorm(31, mean=temp_max_stat$mean[[1]], sd=temp_max_stat$sd[[1]])
+temp_max_feb <- rnorm(28, mean=temp_max_stat$mean[[2]], sd=temp_max_stat$sd[[2]])
+temp_max_mar <- rnorm(31, mean=temp_max_stat$mean[[3]], sd=temp_max_stat$sd[[3]])
+temp_max_apr <- rnorm(30, mean=temp_max_stat$mean[[4]], sd=temp_max_stat$sd[[4]])
+temp_max_may <- rnorm(31, mean=temp_max_stat$mean[[5]], sd=temp_max_stat$sd[[5]])
+temp_max_jun <- rnorm(30, mean=temp_max_stat$mean[[6]], sd=temp_max_stat$sd[[6]])
+temp_max_jul <- rnorm(31, mean=temp_max_stat$mean[[7]], sd=temp_max_stat$sd[[7]])
+temp_max_aug <- rnorm(31, mean=temp_max_stat$mean[[8]], sd=temp_max_stat$sd[[8]])
+temp_max_sep <- rnorm(30, mean=temp_max_stat$mean[[9]], sd=temp_max_stat$sd[[9]])
+temp_max_oct <- rnorm(31, mean=temp_max_stat$mean[[10]], sd=temp_max_stat$sd[[10]])
+temp_max_nov <- rnorm(30, mean=temp_max_stat$mean[[11]], sd=temp_max_stat$sd[[11]])
+temp_max_dec <- rnorm(31, mean=temp_max_stat$mean[[12]], sd=temp_max_stat$sd[[12]])
+
+temp_max_df <- c(temp_max_jan, temp_max_feb, temp_max_mar, temp_max_apr,
+                   temp_max_may, temp_max_jun, temp_max_jul, temp_max_aug,
+                   temp_max_sep, temp_max_oct, temp_max_nov, temp_max_dec)
+```
+
+``` {r sim_precip, echo=FALSE}
+
+precip_stat <- orig_data %>%
+  group_by(mo) %>%
+  summarise(mean = mean(precip), sd = sd(precip))
+
+precip_jan <- rnorm(31, mean=precip_stat$mean[[1]], sd=precip_stat$sd[[1]])
+precip_feb <- rnorm(28, mean=precip_stat$mean[[2]], sd=precip_stat$sd[[2]])
+precip_mar <- rnorm(31, mean=precip_stat$mean[[3]], sd=precip_stat$sd[[3]])
+precip_apr <- rnorm(30, mean=precip_stat$mean[[4]], sd=precip_stat$sd[[4]])
+precip_may <- rnorm(31, mean=precip_stat$mean[[5]], sd=precip_stat$sd[[5]])
+precip_jun <- rnorm(30, mean=precip_stat$mean[[6]], sd=precip_stat$sd[[6]])
+precip_jul <- rnorm(31, mean=precip_stat$mean[[7]], sd=precip_stat$sd[[7]])
+precip_aug <- rnorm(31, mean=precip_stat$mean[[8]], sd=precip_stat$sd[[8]])
+precip_sep <- rnorm(30, mean=precip_stat$mean[[9]], sd=precip_stat$sd[[9]])
+precip_oct <- rnorm(31, mean=precip_stat$mean[[10]], sd=precip_stat$sd[[10]])
+precip_nov <- rnorm(30, mean=precip_stat$mean[[11]], sd=precip_stat$sd[[11]])
+precip_dec <- rnorm(31, mean=precip_stat$mean[[12]], sd=precip_stat$sd[[12]])
+
+precip_df <- c(precip_jan, precip_feb, precip_mar, precip_apr,
+                   precip_may, precip_jun, precip_jul, precip_aug,
+                   precip_sep, precip_oct, precip_nov, precip_dec)
+```
+
+``` {r sim_consum, echo=FALSE}
+
+consum_stat <- orig_data %>%
+  group_by(mo) %>%
+  summarise(mean = mean(consum), sd = sd(consum))
+
+consum_jan <- rnorm(31, mean=consum_stat$mean[[1]], sd=consum_stat$sd[[1]])
+consum_feb <- rnorm(28, mean=consum_stat$mean[[2]], sd=consum_stat$sd[[2]])
+consum_mar <- rnorm(31, mean=consum_stat$mean[[3]], sd=consum_stat$sd[[3]])
+consum_apr <- rnorm(30, mean=consum_stat$mean[[4]], sd=consum_stat$sd[[4]])
+consum_may <- rnorm(31, mean=consum_stat$mean[[5]], sd=consum_stat$sd[[5]])
+consum_jun <- rnorm(30, mean=consum_stat$mean[[6]], sd=consum_stat$sd[[6]])
+consum_jul <- rnorm(31, mean=consum_stat$mean[[7]], sd=consum_stat$sd[[7]])
+consum_aug <- rnorm(31, mean=consum_stat$mean[[8]], sd=consum_stat$sd[[8]])
+consum_sep <- rnorm(30, mean=consum_stat$mean[[9]], sd=consum_stat$sd[[9]])
+consum_oct <- rnorm(31, mean=consum_stat$mean[[10]], sd=consum_stat$sd[[10]])
+consum_nov <- rnorm(30, mean=consum_stat$mean[[11]], sd=consum_stat$sd[[11]])
+consum_dec <- rnorm(31, mean=consum_stat$mean[[12]], sd=consum_stat$sd[[12]])
+
+consum_df <- c(consum_jan, consum_feb, consum_mar, consum_apr,
+                   consum_may, consum_jun, consum_jul, consum_aug,
+                   consum_sep, consum_oct, consum_nov, consum_dec)
+```
+
+``` {r sim_data, echo=FALSE}
+sim_data <- tibble(
+  date = dates,
+  temp_median = temp_med,
+  temp_min = temp_min_df,
+  temp_max = temp_max_df,
+  precip = precip_df,
+  consum = consum_df
+) %>%
+  mutate(across(where(is.numeric), round, digits = 2))
+```
+
+``` {r sim_distr, echo=FALSE}
+sim_dist_p1 <- ggplot(sim_data, aes(x = temp_median)) +
+  geom_histogram(bins = 10) +
+  labs(title = "Distribution of Median Temperature",
+       x = "Temperature (C)",
+       y = "Count") +
+  geom_vline(aes(xintercept = mean(temp_median)),col='red',linewidth=0.5) +
+  geom_vline(aes(xintercept = median(temp_median)),col='green',linewidth=0.5)
+
+sim_dist_p2 <- ggplot(sim_data, aes(x = temp_min)) +
+  geom_histogram(bins = 10) +
+  labs(title = "Distribution of Min. Temperature",
+       x = "Temperature (C)",
+       y = "Count") +
+  geom_vline(aes(xintercept = mean(temp_min)),col='red',linewidth=0.5) +
+  geom_vline(aes(xintercept = median(temp_min)),col='green',linewidth=0.5)
+
+sim_dist_p3 <- ggplot(sim_data, aes(x = temp_max)) +
+  geom_histogram(bins = 10) +
+  labs(title = "Distribution of Max. Temperature",
+       x = "Temperature (C)",
+       y = "Count") +
+  geom_vline(aes(xintercept = mean(temp_max)),col='red',linewidth=0.5) +
+  geom_vline(aes(xintercept = median(temp_max)),col='green',linewidth=0.5)
+
+sim_dist_p4 <- ggplot(sim_data, aes(x = precip)) +
+  geom_histogram(bins = 10) +
+  labs(title = "Distribution of Precipitation",
+       x = "Precipitation (mm)",
+       y = "Count") +
+  geom_vline(aes(xintercept = mean(precip)),col='red',linewidth=0.5) +
+  geom_vline(aes(xintercept = median(precip)),col='green',linewidth=0.5)
+
+# orig_p5 <- ggplot(orig_data, aes(x = weekend)) +
+#   geom_bar() +
+#   labs(title = "Count of Weekdays vs Weekends",
+#        x = "Weekend",
+#        y = "Count")
+
+sim_dist_p6 <- ggplot(sim_data, aes(x = consum)) +
+  geom_histogram(bins = 10) +
+  labs(title = "Distribution of Beer Consumption",
+       x = "Consumption (litres)",
+       y = "Count") +
+  geom_vline(aes(xintercept = mean(consum)),col='red',linewidth=0.5) +
+  geom_vline(aes(xintercept = median(consum)),col='green',linewidth=0.5)
+
+orig_patchwork <- sim_dist_p1 + sim_dist_p2 + sim_dist_p3 + sim_dist_p4 +
+  sim_dist_p6
+orig_patchwork + plot_annotation(
+  title = 'Simulated Dataset Overview',
+  subtitle = 'Red Line - Mean, Green Line - Median'
+)
+```
 
 ## Conclusion
 
