@@ -70,7 +70,7 @@ head(orig_data)
 
 ``` {r orig_comma_rep}
 # Format fields correctly
-orig_data$date <- as.Date(orig_data$date)
+orig_data$date <- as_date(as.Date(orig_data$date))
 orig_data$temp_median <- as.numeric(orig_data$temp_median)
 orig_data$temp_min <- as.numeric(orig_data$temp_min)
 orig_data$temp_max <- as.numeric(orig_data$temp_max)
@@ -81,6 +81,11 @@ orig_data$consum <- as.numeric(as.character(orig_data$consum))
 
 ``` {r orig_summary}
 summary(orig_data)
+```
+
+``` {r orig_add_month}
+orig_data <- orig_data %>%
+  mutate(mo = month(date))
 ```
 
 ``` {r orig_distr, echo=FALSE}
@@ -137,11 +142,39 @@ orig_patchwork + plot_annotation(
 )
 ```
 
-## Simulated Data
-``` {r sim_dataframe}
-#sim_data <- data.frame(date, temp_median, temp_min, temp_max, precip,
-#                       weekend, consum)
+``` {r orig_time}
+orig_time_p1 <- ggplot(orig_data, aes(x = mo, y = temp_median, group = mo)) +
+  geom_boxplot() +
+  scale_x_continuous(breaks = seq(1,12,1)) +
+  stat_summary(fun = "mean", aes(ymax = after_stat(y), ymin = after_stat(y)), 
+               color = "red", shape = 4)
+
+orig_time_p2 <- ggplot(orig_data, aes(x = mo, y = temp_min, group = mo)) +
+  geom_boxplot() +
+  scale_x_continuous(breaks = seq(1,12,1)) +
+  stat_summary(fun = "mean", aes(ymax = after_stat(y), ymin = after_stat(y)), 
+               color = "red", shape = 4)
+
+orig_time_p3 <- ggplot(orig_data, aes(x = mo, y = temp_max, group = mo)) +
+  geom_boxplot() +
+  scale_x_continuous(breaks = seq(1,12,1)) +
+  stat_summary(fun = "mean", aes(ymax = after_stat(y), ymin = after_stat(y)), 
+               color = "red", shape = 4)
+
+orig_time_p4 <- ggplot(orig_data, aes(x = mo, y = precip, group = mo)) +
+  geom_boxplot() +
+  scale_x_continuous(breaks = seq(1,12,1)) +
+  stat_summary(fun = "mean", aes(ymax = after_stat(y), ymin = after_stat(y)), 
+               color = "red", shape = 4)
+
+orig_patchwork <- orig_time_p1 + orig_time_p2 + orig_time_p3 + 
+  orig_time_p4
+orig_patchwork + plot_annotation(
+  title = 'Continuous Variables by Month'
+)
 ```
+
+## Simulated Data
 
 ### Date Range
 ``` {r sim_date}
@@ -155,6 +188,15 @@ end_date <- ymd("2015/12/31")
 dates <- seq(start_date, end_date,"days")
 
 ```
+
+``` {r sim_data}
+sim_data <- tibble(
+  temp_median = rnorm(365, mean = 45, sd = 20)
+)
+#mutate(across(where(is.numeric), round, digits = 0)) # Round numerical data to 0 decimal places
+```
+
+
 
 ## Conclusion
 
