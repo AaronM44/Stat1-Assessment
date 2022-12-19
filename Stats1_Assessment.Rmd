@@ -15,7 +15,7 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 ## Executive Summary
 
 ## Dataset Overview
-The dataset I chose to use for the assessment was found on Kaggle. Over a period of a year in 2015, data was collected that contains the details of beer consumption of students around a university area in Sao Paulo, Brazil.
+The dataset I chose to use for the assessment was found on Kaggle. Over a period of a year in 2015, data was collected containing the beer consumption of students around a university area in Sao Paulo, Brazil.
 
 The original columns were in Brazilian so I have translated them for this project:
 
@@ -40,9 +40,12 @@ H1 - Increased temperatures do lead to an increase in beer consumption
 library(tidyverse)
 library(patchwork)
 library(lubridate)
+library(corrplot)
 ```
 
 ## Original Dataset Analysis
+
+The dataset I chose had a couple of formatting issues I needed to resolve before analysing and simulating the data. First of all, a number of columns had a comma instead of a decimal point. This was easy to fix with a modifier on the ```read.csv()``` function. I also had to remove a large amount of empty rows and finally format each of the columns correctly.
 
 ``` {r orig_read, echo=FALSE}
 # Import data - dataset has commas instead of decimal points and many blank rows
@@ -84,6 +87,7 @@ summary(orig_data)
 ```
 
 ``` {r orig_add_month, echo=FALSE}
+# Add month column
 orig_data <- orig_data %>%
   mutate(mo = month(date))
 ```
@@ -180,27 +184,59 @@ orig_patchwork + plot_annotation(
 )
 ```
 
-## Simulated Data
+``` {r orig_rain_chance, echo=FALSE}
+# Create column for whether it rained on a particular day or not
+orig_data <- orig_data %>%
+  mutate(rained = ifelse(precip > 0, 1, 0))
 
-### Date Range
-``` {r sim_date, echo=FALSE}
-# defining start date
-start_date <- ymd("2015/01/01")
-  
-# defining end date
-end_date <- ymd("2015/12/31")
-  
-# generating range of dates
-dates <- seq(start_date, end_date,"days")
+# Calculate chance of rain for each month
+orig_data %>%
+  group_by(mo) %>%
+  summarise(rain_days = length(rained[rained==1]),
+            mo_days = length(mo),
+            rain_chance = length(rained[rained==1])/length(mo))
 
+# Distribution of precipitation on the days it rained
+orig_data %>%
+  filter(rained == 1) %>%
+  ggplot(aes(x = mo, y = precip, group = mo)) +
+  geom_boxplot() +
+  scale_x_continuous(breaks = seq(1,12,1)) +
+  stat_summary(fun = "mean", aes(ymax = after_stat(y), ymin = after_stat(y)), 
+               color = "red", shape = 4)
 ```
 
-``` {r sim_temp_median, echo=FALSE}
+## Simulated Data
 
+As we're working with weather data across a year, simulating a random set of data based on the overall distribution of each column would not make sense. I wanted the data to represent the changing of temperature across the year in a more realistic way.
+
+To do this I would gather the relevant statistics (mean, standard deviation) across each month and then create a distribution for the number of days in the month.
+
+### Date Range
+
+The first task is to create the range of dates for 2015 using a package called lubridate.
+``` {r sim_date, echo=FALSE}
+# Start date
+start_date <- ymd("2015/01/01")
+  
+# End date
+end_date <- ymd("2015/12/31")
+  
+# Create range of dates
+dates <- seq(start_date, end_date,"days")
+```
+
+### Temperature Columns
+
+For each of the temperature columns I will create a normal distribution for each month then combine them into a vector cotaining a full year of data.
+
+``` {r sim_temp_median, echo=FALSE}
+# Get mean and standard deviation for each month
 temp_med_stat <- orig_data %>%
   group_by(mo) %>%
   summarise(mean = mean(temp_median), sd = sd(temp_median))
 
+# Create distributions
 temp_med_jan <- rnorm(31, mean=temp_med_stat$mean[[1]], sd=temp_med_stat$sd[[1]])
 temp_med_feb <- rnorm(28, mean=temp_med_stat$mean[[2]], sd=temp_med_stat$sd[[2]])
 temp_med_mar <- rnorm(31, mean=temp_med_stat$mean[[3]], sd=temp_med_stat$sd[[3]])
@@ -214,17 +250,19 @@ temp_med_oct <- rnorm(31, mean=temp_med_stat$mean[[10]], sd=temp_med_stat$sd[[10
 temp_med_nov <- rnorm(30, mean=temp_med_stat$mean[[11]], sd=temp_med_stat$sd[[11]])
 temp_med_dec <- rnorm(31, mean=temp_med_stat$mean[[12]], sd=temp_med_stat$sd[[12]])
 
+# Combine into a single vector
 temp_med <- c(temp_med_jan, temp_med_feb, temp_med_mar, temp_med_apr,
                    temp_med_may, temp_med_jun, temp_med_jul, temp_med_aug,
                    temp_med_sep, temp_med_oct, temp_med_nov, temp_med_dec)
 ```
 
 ``` {r sim_temp_min, echo=FALSE}
-
+# Get mean and standard deviation for each month
 temp_min_stat <- orig_data %>%
   group_by(mo) %>%
   summarise(mean = mean(temp_min), sd = sd(temp_min))
 
+# Create distributions
 temp_min_jan <- rnorm(31, mean=temp_min_stat$mean[[1]], sd=temp_min_stat$sd[[1]])
 temp_min_feb <- rnorm(28, mean=temp_min_stat$mean[[2]], sd=temp_min_stat$sd[[2]])
 temp_min_mar <- rnorm(31, mean=temp_min_stat$mean[[3]], sd=temp_min_stat$sd[[3]])
@@ -238,17 +276,19 @@ temp_min_oct <- rnorm(31, mean=temp_min_stat$mean[[10]], sd=temp_min_stat$sd[[10
 temp_min_nov <- rnorm(30, mean=temp_min_stat$mean[[11]], sd=temp_min_stat$sd[[11]])
 temp_min_dec <- rnorm(31, mean=temp_min_stat$mean[[12]], sd=temp_min_stat$sd[[12]])
 
+# Combine into a single vector
 temp_min_df <- c(temp_min_jan, temp_min_feb, temp_min_mar, temp_min_apr,
                    temp_min_may, temp_min_jun, temp_min_jul, temp_min_aug,
                    temp_min_sep, temp_min_oct, temp_min_nov, temp_min_dec)
 ```
 
 ``` {r sim_temp_max, echo=FALSE}
-
+# Get mean and standard deviation for each month
 temp_max_stat <- orig_data %>%
   group_by(mo) %>%
   summarise(mean = mean(temp_max), sd = sd(temp_max))
 
+# Create distributions
 temp_max_jan <- rnorm(31, mean=temp_max_stat$mean[[1]], sd=temp_max_stat$sd[[1]])
 temp_max_feb <- rnorm(28, mean=temp_max_stat$mean[[2]], sd=temp_max_stat$sd[[2]])
 temp_max_mar <- rnorm(31, mean=temp_max_stat$mean[[3]], sd=temp_max_stat$sd[[3]])
@@ -262,17 +302,21 @@ temp_max_oct <- rnorm(31, mean=temp_max_stat$mean[[10]], sd=temp_max_stat$sd[[10
 temp_max_nov <- rnorm(30, mean=temp_max_stat$mean[[11]], sd=temp_max_stat$sd[[11]])
 temp_max_dec <- rnorm(31, mean=temp_max_stat$mean[[12]], sd=temp_max_stat$sd[[12]])
 
+# Combine into a single vector
 temp_max_df <- c(temp_max_jan, temp_max_feb, temp_max_mar, temp_max_apr,
                    temp_max_may, temp_max_jun, temp_max_jul, temp_max_aug,
                    temp_max_sep, temp_max_oct, temp_max_nov, temp_max_dec)
 ```
 
-``` {r sim_precip, echo=FALSE}
+### Precipitation
 
+``` {r sim_precip, echo=FALSE}
+# Get mean and standard deviation for each month
 precip_stat <- orig_data %>%
   group_by(mo) %>%
   summarise(mean = mean(precip), sd = sd(precip))
 
+# Create distributions
 precip_jan <- rnorm(31, mean=precip_stat$mean[[1]], sd=precip_stat$sd[[1]])
 precip_feb <- rnorm(28, mean=precip_stat$mean[[2]], sd=precip_stat$sd[[2]])
 precip_mar <- rnorm(31, mean=precip_stat$mean[[3]], sd=precip_stat$sd[[3]])
@@ -289,14 +333,18 @@ precip_dec <- rnorm(31, mean=precip_stat$mean[[12]], sd=precip_stat$sd[[12]])
 precip_df <- c(precip_jan, precip_feb, precip_mar, precip_apr,
                    precip_may, precip_jun, precip_jul, precip_aug,
                    precip_sep, precip_oct, precip_nov, precip_dec)
+
+# Combine into a single vector
+precip_df <- replace(precip_df, precip_df < 0, 0)
 ```
 
 ``` {r sim_consum, echo=FALSE}
-
+# Get mean and standard deviation for each month
 consum_stat <- orig_data %>%
   group_by(mo) %>%
   summarise(mean = mean(consum), sd = sd(consum))
 
+# Create distributions
 consum_jan <- rnorm(31, mean=consum_stat$mean[[1]], sd=consum_stat$sd[[1]])
 consum_feb <- rnorm(28, mean=consum_stat$mean[[2]], sd=consum_stat$sd[[2]])
 consum_mar <- rnorm(31, mean=consum_stat$mean[[3]], sd=consum_stat$sd[[3]])
@@ -310,12 +358,14 @@ consum_oct <- rnorm(31, mean=consum_stat$mean[[10]], sd=consum_stat$sd[[10]])
 consum_nov <- rnorm(30, mean=consum_stat$mean[[11]], sd=consum_stat$sd[[11]])
 consum_dec <- rnorm(31, mean=consum_stat$mean[[12]], sd=consum_stat$sd[[12]])
 
+# Combine into a single vector
 consum_df <- c(consum_jan, consum_feb, consum_mar, consum_apr,
                    consum_may, consum_jun, consum_jul, consum_aug,
                    consum_sep, consum_oct, consum_nov, consum_dec)
 ```
 
 ``` {r sim_data, echo=FALSE}
+# Create the data
 sim_data <- tibble(
   date = dates,
   temp_median = temp_med,
@@ -325,6 +375,14 @@ sim_data <- tibble(
   consum = consum_df
 ) %>%
   mutate(across(where(is.numeric), round, digits = 2))
+
+# Add month column
+sim_data <- sim_data %>%
+  mutate(mo = month(date))
+
+# Add the weekend column
+sim_data <- sim_data %>%
+  mutate(weekend = ifelse(wday(date, week_start = 1) %in% c(6, 7), 1, 0))
 ```
 
 ``` {r sim_distr, echo=FALSE}
@@ -360,11 +418,11 @@ sim_dist_p4 <- ggplot(sim_data, aes(x = precip)) +
   geom_vline(aes(xintercept = mean(precip)),col='red',linewidth=0.5) +
   geom_vline(aes(xintercept = median(precip)),col='green',linewidth=0.5)
 
-# orig_p5 <- ggplot(orig_data, aes(x = weekend)) +
-#   geom_bar() +
-#   labs(title = "Count of Weekdays vs Weekends",
-#        x = "Weekend",
-#        y = "Count")
+sim_dist_p5 <- ggplot(orig_data, aes(x = weekend)) +
+  geom_bar() +
+  labs(title = "Count of Weekdays vs Weekends",
+       x = "Weekend",
+       y = "Count")
 
 sim_dist_p6 <- ggplot(sim_data, aes(x = consum)) +
   geom_histogram(bins = 10) +
@@ -374,16 +432,38 @@ sim_dist_p6 <- ggplot(sim_data, aes(x = consum)) +
   geom_vline(aes(xintercept = mean(consum)),col='red',linewidth=0.5) +
   geom_vline(aes(xintercept = median(consum)),col='green',linewidth=0.5)
 
-orig_patchwork <- sim_dist_p1 + sim_dist_p2 + sim_dist_p3 + sim_dist_p4 +
-  sim_dist_p6
-orig_patchwork + plot_annotation(
+sim_patchwork_1 <- sim_dist_p1 + sim_dist_p2 + sim_dist_p3 + sim_dist_p4 +
+  sim_dist_p5 + sim_dist_p6
+sim_patchwork_1 + plot_annotation(
   title = 'Simulated Dataset Overview',
   subtitle = 'Red Line - Mean, Green Line - Median'
 )
 ```
 
+## Analysis of Simulated Data
+
+
+### Correlations
+
+``` {r sim_corr_plot, echo=FALSE}
+# Select the columns
+cor_matrix <- sim_data %>%
+  select(temp_median:weekend)
+
+# Create the correlation matrix
+cor_matrix <- round(cor(cor_matrix, use = "complete.obs"), 2)
+
+# Show matrix
+cor_matrix
+
+# Plot matrix
+corrplot(cor_matrix, method="circle", type = "upper")
+```
+
 ## Conclusion
 
+
+## References
 
 
 
