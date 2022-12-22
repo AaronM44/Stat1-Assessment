@@ -16,7 +16,7 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 - A weak positive correlation between median temperature and beer consumption exists.
 - For an increase in temperature of 1 degree Celsius we would expect an increase in beer consumption of 0.2 litres.
 - Linear regression analysis produced a low r-squared value suggesting the relationship does not sufficiently explain the variance in the data.
-- Regression model resulted in a p-value of x suggesting that the relationship is significant.
+- Simple linear regression model resulted in a p-value of 0.0006445 suggesting that the relationship is significant.
 - Multiple regression model showed improvement in p-value and adjusted r-squared but not significantly.
 - Sample of data possibly too small to be representative of population.
 
@@ -216,7 +216,18 @@ orig_data %>%
                color = "red", shape = 4)
 ```
 
-## Simulated Data
+## Method
+
+The simulated data was created by Looking at the distribution of each variable by month. This was used as it would not make sense for the range of temperatures to be random throughout the year as would be the case if we just used the entire dataset. For each of the temperature variables and also beer consumption this worked quite well.
+
+Precipitation however, ended up producing many values less than zero which wouldn't make sense. These values were set to zero to simulate the fact that it would not rain every day.
+
+The continuous variables were all appended together in month order. A sequence of dates throughout the year were then generated and used to also add the weekend column.
+
+Our hypothesis relies upon assessing the relationship between two clearly defined continuous quantitative variables therefore the statistical test chosen was linear regression.
+
+
+
 
 ``` {r sim_date, echo=FALSE}
 # Start date
@@ -228,8 +239,6 @@ end_date <- ymd("2015/12/31")
 # Create range of dates
 dates <- seq(start_date, end_date,"days")
 ```
-
-### Temperature Columns
 
 ``` {r sim_temp_median, echo=FALSE}
 # Get mean and standard deviation for each month
@@ -308,8 +317,6 @@ temp_max_df <- c(temp_max_jan, temp_max_feb, temp_max_mar, temp_max_apr,
                    temp_max_may, temp_max_jun, temp_max_jul, temp_max_aug,
                    temp_max_sep, temp_max_oct, temp_max_nov, temp_max_dec)
 ```
-
-### Precipitation
 
 ``` {r sim_precip, echo=FALSE}
 # Get mean and standard deviation for each month
@@ -441,10 +448,7 @@ sim_patchwork_1 + plot_annotation(
 )
 ```
 
-## Analysis of Simulated Data
-
-
-### Correlations
+We first created a correlation matrix to understand the strength of correlations between each variable as a multiple linear relationship could have been more appropriate. None of the variables had a strong correlation with beer consumption. The temperature variables were all around the 0.17-0.20 range with precipitation even weaker at 0.13.
 
 ``` {r sim_corr_plot, echo=FALSE}
 # Select the columns
@@ -595,6 +599,8 @@ ggplot(sim_data, aes(x = weekend, y = consum, group = weekend)) +
 
 ### Simple Linear Regression
 
+Simple linear regression of beer consumption was then performed using the median temperature as the predictor variable. The relationship between variables was then assessed by reviewing the P-Value and R-Squared value.
+
 ``` {r lm_temp_med, echo=FALSE}
 
 temp_med_lm <- lm(formula = consum ~ temp_median, data = sim_data)
@@ -614,31 +620,7 @@ summary(temp_med_lm)
 # P-Value: 0.0006445
 ```
 
-
-
-## Method
-
-The simulated data was created by Looking at the distribution of each variable by month. This was used as it would not make sense for the range of temperatures to be random throughout the year as would be the case if we just used the entire dataset. For each of the temperature variables and also beer consumption this worked quite well.
-
-DISTRIBUTION PLOTS
-
-Precipitation however, ended up producing many values less than zero which wouldn't make sense. These values were set to zero to simulate the fact that it would not rain every day.
-
-PRECIPITATION PLOTS
-
-The continuous variables were all appended together in month order. A sequence of dates throughout the year were then generated and used to also add the weekend column.
-
-
-
-Our hypothesis relies upon assessing the relationship between two clearly defined continuous quantitative variables therefore the statistical test chosen was linear regression.
-
-We first created a correlation matrix to understand the strength of correlations between each variable as a multiple linear relationship could have been more appropriate. None of the variables had a strong correlation with beer consumption. The temperature variables were all around the 0.17-0.20 range with precipitation even weaker at 0.13.
-
-CORRELATION MATRIX AND PLOT
-
-Simple linear regression of beer consumption was then performed using the median temperature as the predictor variable. The relationship between variables was then assessed by reviewing the P-Value and R-Squared value.
-
-LINEAR MODEL METRICS
+### Multiple Linear Regression
 
 Due to the large variance in the model I thought it might be interesting to add other variables and try a multiple regression model to see if there was any improvement.
 
@@ -697,20 +679,9 @@ summary(lm_1_1)
 autoplot(lm_1_1)[1:2]
 ```
 
-
 ## Results
 
-LINEAR MODEL STATS AND AUTOPLOT
 
-## Conclusion
-
-The simple linear regression analysis produced a p-value of 0.0006445 which tells us that the relationship between temperature and beer consumption is significant and therefore we should reject the null hypotheses. However, the low R-Squared value of 0.0316 suggests that the simple linear regression model does not explain the variance in our data. This is evident when looking at a scatter plot of the data.
-
-``` {r conclusion_1, echo=FALSE}
-p_corr_temp_med
-```
-
-Moving to a multiple linear regression model improved the p-value to 0.0001703 and also improved the adjusted r-squared from 0.0289 to 0.0459. 
 
 ``` {r models_final, echo=FALSE}
 
@@ -727,6 +698,16 @@ final_r_sqr <- models_final %>%
 
 arrange(final_r_sqr, desc(adj_r_sqr))
 ```
+
+## Conclusion
+
+The simple linear regression analysis produced a p-value of 0.0006445 which tells us that the relationship between temperature and beer consumption is significant and therefore we should reject the null hypotheses. However, the low R-Squared value of 0.0316 suggests that the simple linear regression model does not explain the variance in our data. This is evident when looking at a scatter plot of the data.
+
+``` {r conclusion_1, echo=FALSE}
+p_corr_temp_med
+```
+
+Moving to a multiple linear regression model improved the p-value to 0.0001703 and also improved the adjusted r-squared from 0.0289 to 0.0459. 
 
 These are very minor improvements and I do not think they would change my analysis that we could loosely say that temperature does have an effect on beer consumption but the results don't confirm causation.
 
