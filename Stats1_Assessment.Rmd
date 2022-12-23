@@ -13,20 +13,24 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 ```
 
 ## Main Findings
+
 - A weak positive correlation between median temperature and beer consumption exists.
 - For an increase in temperature of 1 degree Celsius we would expect an increase in beer consumption of 0.2 litres.
 - Linear regression analysis produced a low r-squared value suggesting the relationship does not sufficiently explain the variance in the data.
 - Simple linear regression model resulted in a p-value of 0.0006445 suggesting that the relationship is significant.
 - Multiple regression model showed improvement in p-value and adjusted r-squared but not significantly.
+- Multiple regression model introduced multicollinear variables which could produce misleading results.
 - Sample of data possibly too small to be representative of population.
 
 ## Executive Summary
-In 2015 data was gathered related to the volume of beer consumed by groups of students in Sao Paulo, Brazil and the weather across the year. This report aimed to understand whether there was a relationship between temperature and the amount of beer consumed. Linear regression was chosen as the method to describe the relationship as the variables in question were both quantitative. The result was a very weak linear relationship that showed as the temperature increases by 1 degree Celsius beer consumption also increases by around 0.2 litres. However, the data also contained a large amount of variance which was shown to be the case via a low R-Squared value. Moving to a multiple linear regression model with median, minimum and maximum temperature showed a very slight improvement when compared to the simple model but it was not significant enough to change the assessment.
+
+In 2015 data was gathered related to the volume of beer consumed by groups of students in Sao Paulo, Brazil and the weather across the year. This report aimed to understand whether there was a relationship between temperature and the amount of beer consumed. Linear regression was chosen as the method to describe the relationship as the variables in question were both quantitative. The result was a very weak positive linear relationship that showed as the temperature increases by 1 degree Celsius beer consumption also increases by around 0.2 litres. However, the data also contained a large amount of variance which was shown to be the case via a low R-Squared value. Moving to a multiple linear regression model with median, minimum and maximum temperature produced a very slight improvement when compared to the simple regression model but it was not significant enough to change the assessment. The extra complexity and dubious use of variables displaying multicollinearity would also lead me to rule out this model and stick with the original simple regression version.
 
 ## Introduction
-The dataset I chose to use for the assessment was found on Kaggle. Over a period of a year in 2015, data was collected containing the beer consumption of students around a university area in Sao Paulo, Brazil. The dataset also contains the temperature and volume of precipitation for each day. There is one piece of data missing that I would consider crucial and that is the number of students that data was collected from.
 
-The original columns were in Portugese and were translated for this project:
+The dataset chosen for the assessment was found on Kaggle (Lustosa 2018). Over a period of a year in 2015, data was collected containing the beer consumption measured in litres of an unknown number of students around a university area in Sao Paulo, Brazil. The dataset contained three variables related to temperature: median, minimum and maximum recorded for each day, these were all measured in Celsius. Precipitation was also recorded for each day and measured by the total volume in millimeters. Finally, the date was recorded along with a categorical field for whether the date fell on a weekday or weekend. There is one piece of data missing that I would consider crucial to an analysis of this kind and that is the number of students data was collected from. Without this it is difficult to determine whether the data is representative of the population. It is also unclear whether data was collected from the same number of students each day or whether this fluctuated over the year. 
+
+The original columns were in Portugese and were translated for this project using Google. This does not affect results but will make the analysis easier to understand for the intended audience:
 
 - Data - Date
 - Temperatura Media (C) - Median Temp. (C)
@@ -38,11 +42,12 @@ The original columns were in Portugese and were translated for this project:
 
 
 ### Hypothesis
-Is there a relationship between temperature and beer consumption among students in Sao Paulo, Brazil?
 
-H0 - There is no significant relationship between temperature and beer consumption among students.
+The question we will seek to understand in this report is whether there is a relationship between temperature and beer consumption among students in Sao Paulo, Brazil?
 
-H1 - There is a significant relationship between temperature and beer consumption among students.
+H0 - There is no significant relationship between temperature and beer consumption among students in Sao Paulo.
+
+H1 - There is a significant relationship between temperature and beer consumption among students in Sao Paulo.
 
 ``` {r imports, echo=FALSE}
 # Import packages
@@ -56,6 +61,8 @@ library(ggfortify)
 ```
 
 ### Original Dataset Analysis
+
+The first task was to plot the distribution of each variable in the source dataset to gain an understanding of the shape of data. We then looked at each of these at a monthly level. This would help form the strategy for simulating a new dataset.
 
 ``` {r orig_read, echo=FALSE}
 # Import data - dataset has commas instead of decimal points and many blank rows
@@ -161,31 +168,46 @@ orig_time_p1 <- ggplot(orig_data, aes(x = mo, y = temp_median, group = mo)) +
   geom_boxplot() +
   scale_x_continuous(breaks = seq(1,12,1)) +
   stat_summary(fun = "mean", aes(ymax = after_stat(y), ymin = after_stat(y)), 
-               color = "red", shape = 4)
+               color = "red", shape = 4) +
+  labs(title = "Median Temperature by Month",
+       x = "Month",
+       y = "Median Temperature (C)")
 
 orig_time_p2 <- ggplot(orig_data, aes(x = mo, y = temp_min, group = mo)) +
   geom_boxplot() +
   scale_x_continuous(breaks = seq(1,12,1)) +
   stat_summary(fun = "mean", aes(ymax = after_stat(y), ymin = after_stat(y)), 
-               color = "red", shape = 4)
+               color = "red", shape = 4) +
+  labs(title = "Minimum Temperature by Month",
+       x = "Month",
+       y = "Minimum Temperature (C)")
 
 orig_time_p3 <- ggplot(orig_data, aes(x = mo, y = temp_max, group = mo)) +
   geom_boxplot() +
   scale_x_continuous(breaks = seq(1,12,1)) +
   stat_summary(fun = "mean", aes(ymax = after_stat(y), ymin = after_stat(y)), 
-               color = "red", shape = 4)
+               color = "red", shape = 4) +
+  labs(title = "Maximum Temperature by Month",
+       x = "Month",
+       y = "Maximum Temperature (C)")
 
 orig_time_p4 <- ggplot(orig_data, aes(x = mo, y = precip, group = mo)) +
   geom_boxplot() +
   scale_x_continuous(breaks = seq(1,12,1)) +
   stat_summary(fun = "mean", aes(ymax = after_stat(y), ymin = after_stat(y)), 
-               color = "red", shape = 4)
+               color = "red", shape = 4) +
+  labs(title = "Precipitation by Month",
+       x = "Month",
+       y = "Precipitation (mm)")
 
 orig_time_p5 <- ggplot(orig_data, aes(x = mo, y = consum, group = mo)) +
   geom_boxplot() +
   scale_x_continuous(breaks = seq(1,12,1)) +
   stat_summary(fun = "mean", aes(ymax = after_stat(y), ymin = after_stat(y)), 
-               color = "red", shape = 4)
+               color = "red", shape = 4) +
+  labs(title = "Beer Consumption by Month",
+       x = "Month",
+       y = "Beer Consumption (litres)")
 
 orig_patchwork <- orig_time_p1 + orig_time_p2 + orig_time_p3 + 
   orig_time_p4 + orig_time_p5
@@ -194,40 +216,15 @@ orig_patchwork + plot_annotation(
 )
 ```
 
-``` {r orig_rain_chance, echo=FALSE}
-# Create column for whether it rained on a particular day or not
-orig_data <- orig_data %>%
-  mutate(rained = ifelse(precip > 0, 1, 0))
-
-# Calculate chance of rain for each month
-orig_data %>%
-  group_by(mo) %>%
-  summarise(rain_days = length(rained[rained==1]),
-            mo_days = length(mo),
-            rain_chance = length(rained[rained==1])/length(mo))
-
-# Distribution of precipitation on the days it rained
-orig_data %>%
-  filter(rained == 1) %>%
-  ggplot(aes(x = mo, y = precip, group = mo)) +
-  geom_boxplot() +
-  scale_x_continuous(breaks = seq(1,12,1)) +
-  stat_summary(fun = "mean", aes(ymax = after_stat(y), ymin = after_stat(y)), 
-               color = "red", shape = 4)
-```
-
 ## Method
 
-The simulated data was created by Looking at the distribution of each variable by month. This was used as it would not make sense for the range of temperatures to be random throughout the year as would be the case if we just used the entire dataset. For each of the temperature variables and also beer consumption this worked quite well.
+The simulated data was created by studying the distribution of each variable by month. This approach was used as it would not make sense for the range of temperatures to be random throughout the year as would be the case if we just used the entire dataset's distribution. 
 
-Precipitation however, ended up producing many values less than zero which wouldn't make sense. These values were set to zero to simulate the fact that it would not rain every day.
+To simulate the temperature, precipitation and beer consumption data a normal distribution was created for each day of the year using the mean and standard deviation values from the source data for the corresponding month.
 
-The continuous variables were all appended together in month order. A sequence of dates throughout the year were then generated and used to also add the weekend column.
+The simulated precipitation data ended up producing many values less than zero which would not make sense. To rectify this the negative values were set to zero. This worked well and resulted in a distribution close to that of the original dataset.
 
-Our hypothesis relies upon assessing the relationship between two clearly defined continuous quantitative variables therefore the statistical test chosen was linear regression.
-
-
-
+The continuous variables were all appended together in month order. A sequence of dates throughout the year were then generated and added to the dataset. Finally, the weekend column was created by performing a simple check against the date of whether it fell on a weekend and setting the column to values of either "weekend" or "weekday". This was a slight change to the original dataset which used a binary value for this column. A month number column was also added.
 
 ``` {r sim_date, echo=FALSE}
 # Start date
@@ -393,6 +390,8 @@ sim_data <- sim_data %>%
   mutate(weekend = ifelse(wday(date, week_start = 1) %in% c(6, 7), "Weekend", "Weekday"))
 ```
 
+We then plotted the simulated dataset in the same format as done for the original in order to form a comparison. Visually they looked quite similar and would work for our purposes in answering the hypothesis.
+
 ``` {r sim_distr, echo=FALSE}
 sim_dist_p1 <- ggplot(sim_data, aes(x = temp_median)) +
   geom_histogram(bins = 10) +
@@ -448,7 +447,11 @@ sim_patchwork_1 + plot_annotation(
 )
 ```
 
-We first created a correlation matrix to understand the strength of correlations between each variable as a multiple linear relationship could have been more appropriate. None of the variables had a strong correlation with beer consumption. The temperature variables were all around the 0.17-0.20 range with precipitation even weaker at 0.13.
+Our hypothesis relies upon assessing the relationship between two clearly defined continuous quantitative variables therefore the statistical test chosen was linear regression.
+
+### Correlation
+
+We first created a correlation matrix using Pearson's method to understand the strength of correlations between each variable as a multiple linear relationship could have been more appropriate. None of the variables had a strong correlation with beer consumption. The temperature variables were all around the 0.17-0.20 range with precipitation even weaker at 0.13. As we would expect the temperature variables all showed signs of multicollinearity with each other.
 
 ``` {r sim_corr_plot, echo=FALSE}
 # Select the columns
@@ -465,14 +468,11 @@ cor_matrix
 corrplot(cor_matrix, method="circle", type = "upper")
 ```
 
-### Median Temperature
+### Detail Plots of Each Variable
 
-``` {r temp_med_mean, echo=FALSE}
+We plotted scatter plots for each of the quantitative variables to get a visual understanding of any patterns emerging.
 
-sim_data %>%
-  summarise(mean = mean(consum))
-```
-
+##### Correlation Value
 ``` {r temp_med_corr, echo=FALSE}
 
 cor(sim_data$temp_median, sim_data$consum)
@@ -485,32 +485,11 @@ p_corr_temp_med <- ggplot(sim_data, aes(x=temp_median, y=consum)) +
 p_corr_temp_med
 ```
 
-#### Q-Q Plot
-
-``` {r temp_med_qq, echo=FALSE}
-
-ggplot(sim_data, aes(sample = consum)) +
-  geom_qq() +
-  geom_qq_line() +
-  labs(title = "Beer Consumption - Q-Q Plot",
-       x = "Theoretical Quantiles of Normal Distribution",
-       y = "Beer Consumption (litres)")
-```
-
-
-#### Variance
-
-
-``` {r temp_med_var, echo=FALSE}
-
-sim_data %>%
-  summarise(var = var(consum))
-```
-
+Median temperature showed a large variance and also a clustering around the middle of the plot. However, there is a very slight positive linear trend.
 
 ### Minimum Temperature
 
-
+##### Correlation Value
 ``` {r temp_min_corr, echo=FALSE}
 
 cor(sim_data$temp_min, sim_data$consum)
@@ -523,9 +502,11 @@ p_corr_temp_min <- ggplot(sim_data, aes(x=temp_min, y=consum)) +
 p_corr_temp_min
 ```
 
+Minimum temperature had a similar pattern as median temperature but with less clustering and even more variation.
+
 ### Maximum Temperature
 
-
+##### Correlation Value
 ``` {r temp_max_corr, echo=FALSE}
 
 cor(sim_data$temp_max, sim_data$consum)
@@ -538,9 +519,11 @@ p_corr_temp_max <- ggplot(sim_data, aes(x=temp_max, y=consum)) +
 p_corr_temp_max
 ```
 
+Maximum temperature was very similar to the median temperature plot with the same high levels of variation and a clustering around the middle.
+
 ### Precipitation
 
-
+##### Correlation Value
 ``` {r precip_corr, echo=FALSE}
 
 cor(sim_data$precip, sim_data$consum)
@@ -553,8 +536,11 @@ p_corr_precip <- ggplot(sim_data, aes(x=precip, y=consum)) +
 p_corr_precip
 ```
 
+Precipitation was a very different story to the temperature variables and had a cluster around the zero mark which would make sense as it would not rain every day. The regression line added showed a slight positive trend but the variation would appear to increase as the precipitation increased.
+
 ### Month
 
+##### Correlation Value
 ``` {r mo_corr, echo=FALSE}
 
 cor(sim_data$mo, sim_data$consum)
@@ -588,7 +574,10 @@ ggplot(sim_data, aes(x = mo, y = consum, group = mo)) +
   labs(x="Month", y = "Beer Consumption (litres)")
 ```
 
-#### Weekdays vs Weekends
+Looking at beer consumption by month showed a clear pattern of higher consumption generally in the spring and summer months which is not surprising. 
+
+### Weekdays vs Weekends
+
 ``` {r weekend_corr, echo=FALSE}
 ggplot(sim_data, aes(x = weekend, y = consum, group = weekend)) +
   geom_boxplot() +
@@ -597,9 +586,10 @@ ggplot(sim_data, aes(x = weekend, y = consum, group = weekend)) +
   labs(y = "Beer Consumption (litres)")
 ```
 
-### Simple Linear Regression
+Beer consumption appeared to be at similar levels during the week and at the weekend.
 
-Simple linear regression of beer consumption was then performed using the median temperature as the predictor variable. The relationship between variables was then assessed by reviewing the P-Value and R-Squared value.
+### Simple Linear Regression
+Simple linear regression of beer consumption was then performed using the median temperature as the predictor variable. The relationship between variables was then assessed by reviewing the P-Value and R-Squared value. We then looked at the residuals plot to check for patterns and the Q-Q plot to check whether the data was normally distributed.
 
 ``` {r lm_temp_med, echo=FALSE}
 
@@ -620,11 +610,13 @@ summary(temp_med_lm)
 # P-Value: 0.0006445
 ```
 
+The p-value is low which suggests a significant relationship if our confidence level is to be set at 95%. The r-squared value is also low meaning that the relationship does not explain the variance within the data. Analysis of the residuals plot showed no clear pattern which signifies that errors are normally distributed. The Q-Q plot suggests a normal distribution also.
+
 ### Multiple Linear Regression
 
-Due to the large variance in the model I thought it might be interesting to add other variables and try a multiple regression model to see if there was any improvement.
+Due to the large variance in the simple linear regression model I thought it might be interesting to add other variables and try a multiple regression model to see if this could improve the accuracy. However, I recognise that due to the multicollinearity of the temperature variables this probably would not be ideal but I thought it best to try another angle.
 
-As there are only a small number of variables in the dataset I decided to use a forward selection approach starting with the median temperature included.
+We decided to use a forward selection approach starting with the median temperature already included. This was done as there are a small number of variables in the data and it would be more efficient and we already had a base model with a single variable as the predictor. As this was a multiple linear regression test any comparisons would use the adjusted r-squared value of each model including when comparing to the simple linear regression model.
 
 ``` {r lm, echo=FALSE}
 
@@ -647,7 +639,7 @@ models_r_sqr <- models %>%
 arrange(models_r_sqr, desc(adj_r_sqr))
 ```
 
-Baseline adjusted r-squared with just median temperature was 0.02894. Adding in minimum temperature increased this to 0.0427 becoming the new baseline.
+The baseline adjusted r-squared of the simple linear regression model with just median temperature was 0.02894. Adding in minimum temperature increased this to 0.0427 becoming the new baseline for the next round of variable addition.
 
 ``` {r lm_1, echo=FALSE}
 
@@ -669,7 +661,7 @@ models_1_r_sqr <- models_1 %>%
 arrange(models_1_r_sqr, desc(adj_r_sqr))
 ```
 
-The best model had an r-squared of 0.0459 and used median, minimum and maximum temperature. The p-value of this model was lower at 0.0001703 compared to 0.0006445 of the original model using just median temperature. The Q-Q plot showed a normal distribution and the residuals plot displayed no clear pattern.
+The best model after this round had an adjusted r-squared of 0.0459 and used median, minimum and maximum temperature. The p-value of this model was lower at 0.0001703 compared to 0.0006445 of the original model using just median temperature. The Q-Q plot showed a normal distribution and the residuals plot displayed no clear pattern.
 
 ``` {r lm_1_analysis, echo=FALSE}
 
@@ -681,7 +673,9 @@ autoplot(lm_1_1)[1:2]
 
 ## Results
 
+Simple linear regression analysis produced a low p-value and low r-squared value which tells us the relationship is significant between median temperature and beer consumption but does not explain the variance we could see in the scatter plot.
 
+A comparison between the adjusted r-squared values of both the simple and multiple linear regression models reveals that statistically the multiple regression model is marginally better.
 
 ``` {r models_final, echo=FALSE}
 
@@ -701,17 +695,24 @@ arrange(final_r_sqr, desc(adj_r_sqr))
 
 ## Conclusion
 
-The simple linear regression analysis produced a p-value of 0.0006445 which tells us that the relationship between temperature and beer consumption is significant and therefore we should reject the null hypotheses. However, the low R-Squared value of 0.0316 suggests that the simple linear regression model does not explain the variance in our data. This is evident when looking at a scatter plot of the data.
+The simple linear regression analysis gave us a p-value of 0.0006445 which tells us that the relationship between temperature and beer consumption is significant and therefore we should reject the null hypotheses. However, the low R-Squared value of 0.0316 suggests that the simple linear regression model does not explain the variance in our data. This is evident when looking at a scatter plot of the data.
 
 ``` {r conclusion_1, echo=FALSE}
 p_corr_temp_med
 ```
 
-Moving to a multiple linear regression model improved the p-value to 0.0001703 and also improved the adjusted r-squared from 0.0289 to 0.0459. 
+Moving to a multiple linear regression model improved the p-value to 0.0001703 and also improved the adjusted r-squared from 0.0289 to 0.0459. The multiple linear regression model used variables that were all multicollinear which can lead to less reliable results (Hayes 2022). This model also increased complexity with the addition of extra variables.
 
-These are very minor improvements and I do not think they would change my analysis that we could loosely say that temperature does have an effect on beer consumption but the results don't confirm causation.
+The improvements gained by using multiple linear regression were marginal and do not change my analysis that we could loosely say that temperature does have an effect on beer consumption but the results don't confirm causation.
+
+This analysis focussed on answering the hypothesis defined at the start in understanding if there was any relationship between temperature and beer consumption among students but there are opportunities for further work within this data if the scope was expanded. For example the time of year showed a promising pattern that could be interesting to explore.
 
 ## References
+
+Hayes, A (2022) Multicollinearity [online] available at: https://www.investopedia.com/terms/m/multicollinearity.asp [23rd Dec 2022]
+
+Lustosa, A.G. (2018) Beer Consumption - Sao Paulo [online] available at: https://www.kaggle.com/datasets/dongeorge/beer-consumption-sao-paulo [10th Dec 2022]
+
 
 
 
